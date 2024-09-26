@@ -1,8 +1,7 @@
 local GUI = workspace:WaitForChild("Minefield"):WaitForChild("SurfaceGui")
 
 local minefield = GUI:WaitForChild("Minefield")
-local startButton = GUI:WaitForChild("Starter"):WaitForChild("TextButton")
-
+local startButton = GUI:WaitForChild("Configuration"):WaitForChild("StartButton")
 local squareInput = GUI:WaitForChild("Configuration"):WaitForChild("SquareButton")
 local widthInput = GUI:WaitForChild("Configuration"):WaitForChild("Width")
 local heightInput = GUI:WaitForChild("Configuration"):WaitForChild("Height")
@@ -15,10 +14,15 @@ local Generate = require(game:GetService("ReplicatedStorage"):WaitForChild("Gene
 local Cell = require(game:GetService("ReplicatedStorage"):WaitForChild("Cells"))
 
 -- default values
-local width = 9
-local height = 9
-local totalMines = 15
+local width = 10
+widthInput.Text = width
+local height = 10
+heightInput.Text = height
+local totalMines = 10
+minesInput.Text = totalMines
 local square = true
+squareInput.Text = "X"
+
 
 widthInput:GetPropertyChangedSignal("Text"):Connect(function()
 	widthInput.Text = widthInput.Text:gsub('%D+', '')
