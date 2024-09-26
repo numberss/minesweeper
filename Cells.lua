@@ -19,9 +19,7 @@ local Cell = {
 local minefield = workspace:WaitForChild("Minefield"):WaitForChild("SurfaceGui"):WaitForChild("Minefield")
 
 function Cell.GetSurroundingMines(button : TextButton, w : number, h : number)
-	if not button then return false end
-	--if not button:GetAttribute("Mine") then return false end
-	
+	if not button then return false end	
 	local mines = 0
 	local x = tonumber(string.split(button.Name, "|")[1])
 	local y = tonumber(string.split(button.Name, "|")[2])
@@ -44,25 +42,48 @@ function Cell.GetSurroundingMines(button : TextButton, w : number, h : number)
 	return true
 end
 
-function Cell.SurroundingCells(button : TextButton)
+
+function Cell.SurroundingCells(button : TextButton, w : number, h : number)
 	local cellTable = {}
-	local x = tonumber(string.split(button.Name, "|")[1])
-	local y = tonumber(string.split(button.Name, "|")[2])
+	local x0 = tonumber(string.split(button.Name, "|")[1])
+	local y0 = tonumber(string.split(button.Name, "|")[2])
+	local x1 = x0 + 1
+	local x2 = x0 - 1
+	if x1 > w then
+		x1 = x0
+	end
+	if x2 < 1 then
+		x2 = x0
+	end
+	
+	local y1 = y0 + 1
+	local y2 = y0 - 1
+	if y1 > h then
+		y1 = y0
+	end
+	if y2 < 1 then
+		y2 = y0
+	end
 	
 	-- going clockwise from 12 oclock
-	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x).."|"..tostring(y+1))) -- cell1 
-	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x+1).."|"..tostring(y+1))) -- cell2 
-	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x+1).."|"..tostring(y))) -- cell3 
-	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x+1).."|"..tostring(y-1))) -- cell4 
-	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x).."|"..tostring(y-1))) -- cell5 
-	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x-1).."|"..tostring(y-1))) -- cell6 
-	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x-1).."|"..tostring(y))) -- cell7 
-	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x-1).."|"..tostring(y+1))) -- cell8 
+	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x1).."|"..tostring(y1)))
+	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x1).."|"..tostring(y0)))
+	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x1).."|"..tostring(y2)))
+	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x0).."|"..tostring(y2)))
+	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x2).."|"..tostring(y2)))
+	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x2).."|"..tostring(y0)))
+	table.insert(cellTable, button.Parent:FindFirstChild(tostring(x2).."|"..tostring(y1)))
 	
 	for _,cell in pairs(cellTable) do
-		Cell.Reveal(cell)
+		if cell then
+			Cell.Reveal(cell)
+			if cell:GetAttribute("Mine") and cell:GetAttribute("Revealed") then
+				Cell.Lose(w, h)
+			end
+		end
 	end
 end
+
 
 function Cell.DiscoverBoard(w : number, h : number, flag : boolean)
 	for i=1, w do
@@ -71,13 +92,14 @@ function Cell.DiscoverBoard(w : number, h : number, flag : boolean)
 			Cell.GetSurroundingMines(button, w, h)
 			if button:GetAttribute("Revealed") then
 				Cell.Reveal(button)
-				if button:GetAttribute("NearbyMines") == 0 and not flag then
-					Cell.SurroundingCells(button)
-				end
+			end
+			if button:GetAttribute("NearbyMines") == 0 and not flag then
+				Cell.SurroundingCells(button, w, h)
 			end
 		end
 	end
 end
+
 
 function Cell.Reveal(button : TextButton)
 	if button:GetAttribute("Flagged") then return true end
@@ -103,6 +125,7 @@ function Cell.Reveal(button : TextButton)
 	end
 end
 
+
 function Cell.Flag(button : TextButton)
 	if button:GetAttribute("Revealed") then return end
 	if button:GetAttribute("Flagged") then
@@ -114,6 +137,7 @@ function Cell.Flag(button : TextButton)
 	end
 	button.BackgroundColor3 = Cell.colours[button.Text]
 end
+
 
 function Cell.CheckWin(w : number, h : number)
 	for i=1, w do
@@ -127,19 +151,25 @@ function Cell.CheckWin(w : number, h : number)
 	Cell.Win(w, h)	
 end
 
+
 function Cell.Win(w : number, h : number)
 	minefield.BackgroundColor3 = Color3.fromRGB(66, 204, 75)
 	for i=1, w do
 		for j=1, h do
 			local button : TextButton = minefield:FindFirstChild(i.."|"..j)
+			button:SetAttribute("NearbyMines", 0)
 			if button:GetAttribute("Mine") and not button:GetAttribute("Flagged") then
 				button.Text = "F"
-				button.BackgroundColor3 = Cell.colours[button.Text]
-				Cell.DiscoverBoard(w, h, false)
+				button.BackgroundColor3 = Color3.fromRGB(50, 107, 55)
+			elseif not button:GetAttribute("Mine") and not button:GetAttribute("Flagged") then
+				Cell.Reveal(button)
+			elseif button:GetAttribute("Flagged") then
+				button.BackgroundColor3 = Color3.fromRGB(50, 107, 55)
 			end
 		end
 	end
 end
+
 
 function Cell.Lose(w : number, h : number)
 	minefield.BackgroundColor3 = Color3.fromRGB(204, 24, 24)
