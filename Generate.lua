@@ -20,12 +20,8 @@ function Generate.SetupGrid(totalMines : number, w : number, h : number)
 			button.Size = UDim2.new(0.9/w, 0, 0.9/h, 0)
 			button.Position = UDim2.new((j-0.95)/w, 0, (i-0.95)/h, 0)
 			button.Font = Enum.Font.FredokaOne
-			--button.TextSize = 25
 			button.TextScaled = true
 			button.Text = ""
-			if button.TextFits then
-				button.TextScaled = true
-			end
 			button.BackgroundColor3 = Color3.fromRGB(103, 103, 103)
 			button:SetAttribute("Mine", false)
 			button:SetAttribute("NearbyMines", 0)
@@ -48,6 +44,7 @@ function Generate.PlaceMines(totalMines : number, w : number, h : number)
 		local x = math.random(1,w)
 		local y = math.random(1,h)
 		local button = minefield:FindFirstChild(x.."|"..y)
+		if not button then continue end
 		while button:GetAttribute("Mine") do
 			x += 1
 			if x > w then
@@ -69,8 +66,8 @@ function Generate.FindFirstCell(w : number, h : number)
 		for j=1, h do
 			local button = minefield:FindFirstChild(i.."|"..j)
 			if button:GetAttribute("NearbyMines") == 0 then
-				Cell.Reveal(button)
-				Cell.DiscoverBoard(w, h, false)
+				--Cell.Reveal(button)
+				print("FOUND")
 				return
 			end
 		end
