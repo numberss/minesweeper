@@ -1,14 +1,12 @@
-local GUI = workspace:WaitForChild("Minefield"):WaitForChild("SurfaceGui")
+local minefield = workspace:WaitForChild("Minefield"):WaitForChild("SurfaceGui"):WaitForChild("Minefield")
+local config = workspace:WaitForChild("Configuration"):WaitForChild("SurfaceGui")
 
-local minefield = GUI:WaitForChild("Minefield")
-local startButton = GUI:WaitForChild("Configuration"):WaitForChild("StartButton")
-local squareInput = GUI:WaitForChild("Configuration"):WaitForChild("SquareButton")
-local widthInput = GUI:WaitForChild("Configuration"):WaitForChild("Width")
-local heightInput = GUI:WaitForChild("Configuration"):WaitForChild("Height")
-local minesInput = GUI:WaitForChild("Configuration"):WaitForChild("Mines")
-
-local lost = false
-local won = false
+local startButton = config:WaitForChild("StartButton")
+local squareInput = config:WaitForChild("SquareButton")
+local widthInput = config:WaitForChild("Width")
+local heightInput = config:WaitForChild("Height")
+local minesInput = config:WaitForChild("Mines")
+local staticInput = config:WaitForChild("StaticButton")
 
 local Generate = require(game:GetService("ReplicatedStorage"):WaitForChild("Generate"))
 local Cell = require(game:GetService("ReplicatedStorage"):WaitForChild("Cells"))
@@ -18,10 +16,14 @@ local width = 10
 widthInput.Text = width
 local height = 10
 heightInput.Text = height
-local totalMines = 10
+local totalMines = 30
 minesInput.Text = totalMines
 local square = true
 squareInput.Text = "X"
+local static = true
+staticInput.Text = "X"
+
+local ended = false
 
 
 widthInput:GetPropertyChangedSignal("Text"):Connect(function()
@@ -48,60 +50,66 @@ end)
 squareInput.MouseButton1Up:Connect(function()
 	if square then
 		squareInput.Text = ""
-		square = false
 		width = tonumber(widthInput.Text)
 		height = tonumber(heightInput.Text)
 	else
 		squareInput.Text = "X"
-		square = true
 		width = math.max(width, height)
 		height = width
 	end
-	print(square)
+	square = not square
+end)
+
+staticInput.MouseButton1Up:Connect(function()
+	if static then
+		staticInput.Text = ""
+	else
+		staticInput.Text = "X"
+	end
+	static = not static
 end)
 
 
 startButton.MouseButton1Up:Connect(function()
-	Generate.SetupGrid(totalMines, width, height)
+	ended = false
+	Generate.SetupGrid(totalMines, width, height, static)
 end)
 
 local db = true
 
 minefield.ChildAdded:Connect(function()
+--local function gameHandler()
 	for _,button in pairs(minefield:GetChildren()) do
 		if not button:IsA("TextButton") then continue end
 		
 		-- Revealing
 		button.MouseButton1Up:Connect(function()
-			if db == true then
+			if db and not ended then
 				db = false
 				
-				if not Cell.Reveal(button) then
-					Cell.Lose(width, height)
-				end
-				Cell.DiscoverBoard(width, height, false)
-				Cell.CheckWin(width, height)
+				if Cell.UpdateCell(button, false):GetAttribute("Mine") then Cell.Lose() ended = true end
+				if Cell.CheckWin() then ended = true end
 
 				task.wait(.1)
 				db = true
-			else
-				return false;
 			end
 		end)
 		
 		-- Flagging
 		button.MouseButton2Up:Connect(function()
-			if db == true then
+			if db and not ended then
 				db = false
 				
-				Cell.Flag(button)
-				Cell.DiscoverBoard(width, height, true)
+				Cell.UpdateCell(button, true)
+				if Cell.CheckWin() then ended = true end
 
 				task.wait(.1)
 				db = true
-			else
-				return false;
 			end
 		end)
 	end
 end)
+
+--if not ended then
+--	minefield.ChildAdded:Connect(gameHandler)
+--end

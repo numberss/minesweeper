@@ -4,13 +4,15 @@ local Cell = require(game:GetService("ReplicatedStorage"):WaitForChild("Cells"))
 
 local minefield = workspace:WaitForChild("Minefield"):WaitForChild("SurfaceGui"):WaitForChild("Minefield")
 
-function Generate.SetupGrid(totalMines : number, w : number, h : number)
+function Generate.SetupGrid(totalMines : number, w : number, h : number, static : boolean)
 	minefield:ClearAllChildren()
 	local minefieldConstraint = Instance.new("UIAspectRatioConstraint", minefield)
 	local minefieldCorner = Instance.new("UICorner", minefield)
 	local minefieldStroke = Instance.new("UIStroke", minefield)
 	minefieldStroke.Thickness = 10
 	minefieldCorner.CornerRadius = UDim.new(0, 10)
+	minefield:SetAttribute("Width", w)
+	minefield:SetAttribute("Height", h)
 	
 	for i=1, h do
 		for j=1, w do
@@ -23,8 +25,8 @@ function Generate.SetupGrid(totalMines : number, w : number, h : number)
 			button.TextScaled = true
 			button.Text = ""
 			button.BackgroundColor3 = Color3.fromRGB(103, 103, 103)
-			button:SetAttribute("Mine", false)
 			button:SetAttribute("NearbyMines", 0)
+			button:SetAttribute("Mine", false)
 			button:SetAttribute("Flagged", false)
 			button:SetAttribute("Revealed", false)
 			button.Parent = minefield
@@ -35,22 +37,24 @@ function Generate.SetupGrid(totalMines : number, w : number, h : number)
 			stroke.Thickness = 5
 		end
 	end
-	Generate.PlaceMines(totalMines, w, h)
-	Generate.FindFirstCell(w ,h)
+	Generate.PlaceMines(totalMines)
+	Generate.DiscoverBoard()
+	Generate.FindFirstCell()
+	minefield:SetAttribute("Static", static)
 end
 
-function Generate.PlaceMines(totalMines : number, w : number, h : number)
+function Generate.PlaceMines(totalMines : number)
 	for i=1, totalMines do
-		local x = math.random(1,w)
-		local y = math.random(1,h)
+		local x = math.random(1,minefield:GetAttribute("Width"))
+		local y = math.random(1,minefield:GetAttribute("Height"))
 		local button = minefield:FindFirstChild(x.."|"..y)
 		if not button then continue end
 		while button:GetAttribute("Mine") do
 			x += 1
-			if x > w then
+			if x > minefield:GetAttribute("Width") then
 				x = 1
 				y += 1
-				if y > h then
+				if y > minefield:GetAttribute("Height") then
 					y = 0
 				end
 			end
@@ -60,14 +64,21 @@ function Generate.PlaceMines(totalMines : number, w : number, h : number)
 	end
 end
 
-function Generate.FindFirstCell(w : number, h : number)
-	Cell.DiscoverBoard(w, h, false)
-	for i=1, w do
-		for j=1, h do
+function Generate.DiscoverBoard()
+	for i=1, minefield:GetAttribute("Width") do
+		for j=1, minefield:GetAttribute("Height") do
+			local button = minefield:FindFirstChild(i.."|"..j)
+			Cell.GetSurroundingMines(button)
+		end
+	end
+end
+
+function Generate.FindFirstCell()
+	for i=1, minefield:GetAttribute("Width") do
+		for j=1, minefield:GetAttribute("Height") do
 			local button = minefield:FindFirstChild(i.."|"..j)
 			if button:GetAttribute("NearbyMines") == 0 then
-				--Cell.Reveal(button)
-				print("FOUND")
+				Cell.UpdateCell(button, false)
 				return
 			end
 		end
