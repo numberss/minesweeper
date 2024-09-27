@@ -87,7 +87,7 @@ minefield.ChildAdded:Connect(function()
 			if db and not ended then
 				db = false
 				
-				if Cell.UpdateCell(button, false):GetAttribute("Mine") then Cell.Lose() ended = true end
+				if not Cell.UpdateCell(button, false) then Cell.Lose() ended = true end
 				if Cell.CheckWin() then ended = true end
 
 				task.wait(.1)
@@ -109,7 +109,3 @@ minefield.ChildAdded:Connect(function()
 		end)
 	end
 end)
-
---if not ended then
---	minefield.ChildAdded:Connect(gameHandler)
---end
